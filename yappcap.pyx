@@ -1,3 +1,4 @@
+include "definitions.pxi"
 from pcap cimport *
 
 class PcapError(Exception):
@@ -55,16 +56,20 @@ cdef class Pcap(object):
         cdef pcap_pkthdr *hdr
         cdef const_uchar_ptr data
 
+        if self.__pcap is NULL:
+            raise PcapErrorNotActivated()
+
         res = pcap_next_ex(self.__pcap, &hdr, &data)
         if res == 0:
             raise PcapTimeout()
         if res == -1:
             raise PcapError(pcap_geterr(self.__pcap))
-        elif res == -2:
+        if res == -2:
             raise StopIteration
-        elif res == PCAP_ERROR_NOT_ACTIVATED:
-            raise PcapErrorNotActivated() # This is undocumented, but happens
-        elif res == 1:
+        IF not PCAP_V0:
+            if res == PCAP_ERROR_NOT_ACTIVATED:
+                raise PcapErrorNotActivated() # This is undocumented, but happens
+        if res == 1:
             pkt = PcapPacket_factory(hdr, data)
             return pkt
         else:
@@ -72,6 +77,10 @@ cdef class Pcap(object):
 
     def dispatch(self, cnt, callback, *args, **kwargs):
         cdef pcap_callback_ctx ctx
+
+        if self.__pcap is NULL:
+            raise PcapErrorNotActivated()
+
         ctx.callback = <void *>callback
         ctx.args = <void *>args
         ctx.kwargs = <void *>kwargs
@@ -80,17 +89,18 @@ cdef class Pcap(object):
             return res
         if res == -1:
             raise PcapError(pcap_geterr(self.__pcap))
-        elif res == -2:
+        if res == -2:
             # XXX breakloop called, do something
             return
-        elif res == PCAP_ERROR_NOT_ACTIVATED:
-            raise PcapErrorNotActivated()
-        else:
-            raise PcapError("Unknown error")
+        IF not PCAP_V0:
+            if res == PCAP_ERROR_NOT_ACTIVATED:
+                raise PcapErrorNotActivated()
+        raise PcapError("Unknown error")
 
 
     def __dealloc__(self):
-        pcap_close(self.__pcap)
+        if self.__pcap:
+            pcap_close(self.__pcap)
 
 
 # Things that work with pcap_open_live/pcap_create
@@ -105,16 +115,18 @@ cdef class PcapLive(Pcap):
             timeout=0, buffer_size=0):
         cdef char errbuf[PCAP_ERRBUF_SIZE]
         self.__interface = interface # For now, eventually we'll look it up and do PcapInterface
-        self.__pcap = pcap_create(self.__interface, errbuf)
-        if self.__pcap is NULL:
-            raise PcapError(errbuf)
+        if not PCAP_V0:
+            self.__pcap = pcap_create(self.__interface, errbuf)
+            if self.__pcap is NULL:
+                raise PcapError(errbuf)
 
         # Set default values via properties
         self.snaplen = snaplen
         self.promisc = promisc
-        self.rfmon = rfmon
         self.timeout = timeout
-        self.buffer_size = buffer_size
+        IF not PCAP_V0:
+            self.rfmon = rfmon
+            self.buffer_size = buffer_size
 
     property interface:
         def __get__(self):
@@ -124,51 +136,75 @@ cdef class PcapLive(Pcap):
         def __get__(self):
             return self.__snaplen
         def __set__(self, snaplen):
-            if pcap_set_snaplen(self.__pcap, snaplen) == PCAP_ERROR_ACTIVATED:
-                raise PcapErrorActivated()
+            IF PCAP_V0:
+                if self.__pcap:
+                    raise PcapErrorActivated()
+            ELSE:
+                if pcap_set_snaplen(self.__pcap, snaplen) == PCAP_ERROR_ACTIVATED:
+                    raise PcapErrorActivated()
             self.__snaplen = snaplen
 
     property promisc:
         def __get__(self):
             return self.__promisc
         def __set__(self, promisc):
-            if pcap_set_promisc(self.__pcap, promisc) == PCAP_ERROR_ACTIVATED:
-                raise PcapErrorActivated()
+            IF PCAP_V0:
+                if self.__pcap:
+                    raise PcapErrorActivated()
+            ELSE:
+                if pcap_set_promisc(self.__pcap, promisc) == PCAP_ERROR_ACTIVATED:
+                    raise PcapErrorActivated()
             self.__promisc = promisc
-
-    property rfmon:
-        def __get__(self):
-            return self.__rfmon
-        def __set__(self, rfmon):
-            res = pcap_can_set_rfmon(self.__pcap)
-            if res == 0:
-                # Could not set rfmon for some non-error reason
-                return
-            elif res == PCAP_ERROR_NO_SUCH_DEVICE:
-                raise PcapErrorNoSuchDevice()
-            elif res == PCAP_ERROR_ACTIVATED:
-                raise PcapErrorActivated()
-            elif res == PCAP_ERROR:
-                raise PcapError(pcap_geterr(self.__pcap))
-            elif res == 1:
-                if pcap_set_rfmon(self.__pcap, rfmon) == PCAP_ERROR_ACTIVATED:
-                    raise PCAP_ERROR_ACTIVATED
-                self.__rfmon = rfmon 
 
     property timeout:
         def __get__(self):
             return self.__timeout
         def __set__(self, timeout):
-            if pcap_set_timeout(self.__pcap, timeout) == PCAP_ERROR_ACTIVATED:
-                raise PcapErrorActivated()
+            IF PCAP_V0:
+                if self.__pcap:
+                    raise PcapErrorActivated()
+            ELSE:
+                if pcap_set_timeout(self.__pcap, timeout) == PCAP_ERROR_ACTIVATED:
+                    raise PcapErrorActivated()
             self.__timeout = timeout 
+
+    property rfmon:
+        def __get__(self):
+            IF PCAP_V0:
+                raise PcapError("%s is too old for this call" % (lib_version(),))
+            ELSE:
+                return self.__rfmon
+        def __set__(self, rfmon):
+            IF PCAP_V0:
+                raise PcapError("%s is too old for this call" % (lib_version(),))
+            ELSE:
+                res = pcap_can_set_rfmon(self.__pcap)
+                if res == 0:
+                    # Could not set rfmon for some non-error reason
+                    return
+                elif res == PCAP_ERROR_NO_SUCH_DEVICE:
+                    raise PcapErrorNoSuchDevice()
+                elif res == PCAP_ERROR_ACTIVATED:
+                    raise PcapErrorActivated()
+                elif res == PCAP_ERROR:
+                    raise PcapError(pcap_geterr(self.__pcap))
+                elif res == 1:
+                    if pcap_set_rfmon(self.__pcap, rfmon) == PCAP_ERROR_ACTIVATED:
+                        raise PCAP_ERROR_ACTIVATED
+                    self.__rfmon = rfmon 
 
     property buffer_size:
         def __get__(self):
-            return self.__buffer_size
+            IF PCAP_V0:
+                raise PcapError("%s is too old for this call" % (lib_version(),))
+            ELSE:
+                return self.__buffer_size
         def __set__(self, timeout):
-            if pcap_set_buffer_size(self.__pcap, timeout) == PCAP_ERROR_ACTIVATED:
-                raise PcapErrorActivated()
+            IF PCAP_V0:
+                raise PcapError("%s is too old for this call" % (lib_version(),))
+            ELSE:
+                if pcap_set_buffer_size(self.__pcap, timeout) == PCAP_ERROR_ACTIVATED:
+                    raise PcapErrorActivated()
 
     property fileno:
         def __get__(self):
@@ -182,6 +218,10 @@ cdef class PcapLive(Pcap):
     property blocking:
         def __get__(self):
             cdef char errbuf[PCAP_ERRBUF_SIZE]
+
+            if self.__pcap is NULL:
+                raise PcapErrorNotActivated()
+
             res = pcap_getnonblock(self.__pcap, errbuf)
             if res == -1:
                 raise PcapError(errbuf)
@@ -194,35 +234,51 @@ cdef class PcapLive(Pcap):
 
         def __set__(self, blocking):
             cdef char errbuf[PCAP_ERRBUF_SIZE]
+
+            if self.__pcap is NULL:
+                raise PcapErrorNotActivated()
+
             res = pcap_setnonblock(self.__pcap, not blocking, errbuf)
             if res == -1:
                 raise PcapError(errbuf)
-            elif res == -3:
-                raise PcapErrorNotActivated() # Not documented, but happens
-            elif res != 0:
+            IF not PCAP_V0:
+                if res == PCAP_ERROR_NOT_ACTIVATED:
+                    raise PcapErrorNotActivated() # Not documented, but happens
+            if res != 0:
                 raise PcapError("Unknown error %d" % (res,))
 
     def activate(self):
-        cdef res = pcap_activate(self.__pcap)
-        if res == 0:
-            # Success
-            return
-        elif res == PCAP_WARNING_PROMISC_NOTSUP:
-            raise PcapWarningPromiscNotSup(pcap_geterr(self.__pcap))
-        elif res == PCAP_WARNING:
-            raise PcapWarning(pcap_geterr(self.__pcap))
-        elif res == PCAP_ERROR_ACTIVATED:
-            raise PcapErrorActivated()
-        elif res == PCAP_ERROR_NO_SUCH_DEVICE:
-            raise PcapErrorNoSuchDevice(pcap_geterr(self.__pcap))
-        elif res == PCAP_ERROR_PERM_DENIED:
-            raise PcapErrorPermDenied(pcap_geterr(self.__pcap))
-        elif res == PCAP_ERROR_RFMON_NOTSUP:
-            raise PcapErrorRfmonNotSup()
-        elif res == PCAP_ERROR_IFACE_NOT_UP:
-            raise PcapErrorIfaceNotUp()
-        elif res == PCAP_ERROR:
-            raise PcapError(pcap_geterr(self.__pcap))
+        cdef res
+        IF PCAP_V0:
+            cdef char errbuf[PCAP_ERRBUF_SIZE]
+
+            if self.__pcap is not NULL:
+                raise PcapErrorActivated()
+
+            self.__pcap = self.__pcap = pcap_open_live(self.__interface, self.__snaplen, self.__promisc, self.__timeout, errbuf)
+            if self.__pcap is NULL:
+                raise PcapError(errbuf)
+        ELSE:
+            res = pcap_activate(self.__pcap)
+            if res == 0:
+                # Success
+                return
+            elif res == PCAP_WARNING_PROMISC_NOTSUP:
+                raise PcapWarningPromiscNotSup(pcap_geterr(self.__pcap))
+            elif res == PCAP_WARNING:
+                raise PcapWarning(pcap_geterr(self.__pcap))
+            elif res == PCAP_ERROR_ACTIVATED:
+                raise PcapErrorActivated()
+            elif res == PCAP_ERROR_NO_SUCH_DEVICE:
+                raise PcapErrorNoSuchDevice(pcap_geterr(self.__pcap))
+            elif res == PCAP_ERROR_PERM_DENIED:
+                raise PcapErrorPermDenied(pcap_geterr(self.__pcap))
+            elif res == PCAP_ERROR_RFMON_NOTSUP:
+                raise PcapErrorRfmonNotSup()
+            elif res == PCAP_ERROR_IFACE_NOT_UP:
+                raise PcapErrorIfaceNotUp()
+            elif res == PCAP_ERROR:
+                raise PcapError(pcap_geterr(self.__pcap))
 
 
 # Things that work with pcap_open_offline

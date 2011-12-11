@@ -1,3 +1,5 @@
+include "definitions.pxi"
+
 cdef extern from "sys/time.h":
     cdef struct timeval:
         long tv_sec
@@ -6,7 +8,7 @@ cdef extern from "sys/time.h":
 cdef extern from *:
     ctypedef unsigned char* const_uchar_ptr "const unsigned char *"
 
-cdef extern from "pcap/pcap.h":
+cdef extern from "pcap.h":
     ctypedef struct pcap_t:
         pass
     cdef struct pcap_pkthdr:
@@ -18,29 +20,32 @@ cdef extern from "pcap/pcap.h":
         pass
     ctypedef void (*pcap_handler)(unsigned char *, const_pcap_pkthdr_ptr, const_uchar_ptr)
     ctypedef enum:
-        PCAP_ERROR                = -1
-        PCAP_ERROR_BREAK          = -2
-        PCAP_ERROR_NOT_ACTIVATED  = -3
-        PCAP_ERROR_ACTIVATED      = -4
-        PCAP_ERROR_NO_SUCH_DEVICE = -5
-        PCAP_ERROR_RFMON_NOTSUP   = -6
-        PCAP_ERROR_NOT_RFMON      = -7
-        PCAP_ERROR_PERM_DENIED    = -8
-        PCAP_ERROR_IFACE_NOT_UP   = -9
+        PCAP_ERROR
+        PCAP_ERROR_BREAK
+        PCAP_ERROR_NOT_ACTIVATED
+        PCAP_ERROR_ACTIVATED
+        PCAP_ERROR_NO_SUCH_DEVICE
+        PCAP_ERROR_RFMON_NOTSUP
+        PCAP_ERROR_NOT_RFMON
+        PCAP_ERROR_PERM_DENIED
+        PCAP_ERROR_IFACE_NOT_UP
 
-        PCAP_WARNING                = 1
-        PCAP_WARNING_PROMISC_NOTSUP = 2
+        PCAP_WARNING
+        PCAP_WARNING_PROMISC_NOTSUP
 
-        PCAP_ERRBUF_SIZE = 256
+        PCAP_ERRBUF_SIZE
 
-    pcap_t *pcap_create(char *, char *)
-    int	pcap_activate(pcap_t *)
-    int	pcap_set_snaplen(pcap_t *, int)
-    int	pcap_set_promisc(pcap_t *, int)
-    int	pcap_can_set_rfmon(pcap_t *)
-    int	pcap_set_rfmon(pcap_t *, int)
-    int	pcap_set_timeout(pcap_t *, int)
-    int	pcap_set_buffer_size(pcap_t *, int)
+    IF PCAP_V0:
+        pcap_t *pcap_open_live(char *, int, int, int, char *)
+    ELSE:
+        pcap_t *pcap_create(char *, char *)
+        int	pcap_activate(pcap_t *)
+        int	pcap_set_snaplen(pcap_t *, int)
+        int	pcap_set_promisc(pcap_t *, int)
+        int	pcap_can_set_rfmon(pcap_t *)
+        int	pcap_set_rfmon(pcap_t *, int)
+        int	pcap_set_timeout(pcap_t *, int)
+        int	pcap_set_buffer_size(pcap_t *, int)
 
     void pcap_close(pcap_t *)
     int pcap_fileno(pcap_t *)
