@@ -11,4 +11,7 @@ clean:
 	python setup.py clean
 	rm -f generate_defs definitions.pxi yappcap.c *.so
 
+install: all
+	python setup.py install
 .PHONY: clean
+.PHONY: install
