@@ -34,7 +34,12 @@ cdef extern from "pcap.h":
         PCAP_WARNING_PROMISC_NOTSUP
 
         PCAP_ERRBUF_SIZE
+        PCAP_NETMASK_UNKNOWN
 
+    cdef struct bpf_program:
+        pass
+
+    # Live-capture-only functions
     IF PCAP_V0:
         pcap_t *pcap_open_live(char *, int, int, int, char *)
     ELSE:
@@ -46,25 +51,31 @@ cdef extern from "pcap.h":
         int	pcap_set_rfmon(pcap_t *, int)
         int	pcap_set_timeout(pcap_t *, int)
         int	pcap_set_buffer_size(pcap_t *, int)
-
-    void pcap_close(pcap_t *)
     int pcap_fileno(pcap_t *)
     int pcap_setnonblock(pcap_t *, int, char *)
     int pcap_getnonblock(pcap_t *, char *)
 
+    # Offline-capture-only functions
     pcap_t *pcap_open_offline(char *, char *)
     bint pcap_is_swapped(pcap_t *)
     int pcap_major_version(pcap_t *)
     int pcap_minor_version(pcap_t *)
 
+    # Live and Offline functions
     int pcap_snapshot(pcap_t *)
     int pcap_next_ex(pcap_t *, pcap_pkthdr **, const_uchar_ptr *)
     int pcap_dispatch(pcap_t *, int, pcap_handler, const_uchar_ptr)
+    int pcap_compile(pcap_t *, bpf_program *, char *, int, unsigned int)
+    int pcap_setfilter(pcap_t *, bpf_program *)
+    void pcap_close(pcap_t *)
+    char *pcap_geterr(pcap_t *)
 
+    # Pcap dump functions
     pcap_dumper_t *pcap_dump_open(pcap_t *, char *)
     void pcap_dump_close(pcap_dumper_t *)
     void pcap_dump(const_uchar_ptr, pcap_pkthdr *, const_uchar_ptr)
-    char *pcap_geterr(pcap_t *)
+
+    # Top-level library functions
     char *pcap_lib_version()
 
 cdef struct pcap_callback_ctx:

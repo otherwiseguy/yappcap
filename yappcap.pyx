@@ -97,6 +97,19 @@ cdef class Pcap(object):
                 raise PcapErrorNotActivated()
         raise PcapError("Unknown error")
 
+    # It sucks that this requires an activated pcap since it means
+    # that we will capture non-matching packets between activation
+    # and calling setfilter()
+    def setfilter(self, filterstring):
+        if self.__pcap is NULL:
+            raise PcapErrorNotActivated()
+        bpf = BpfProgram(self, filterstring)
+        res = pcap_setfilter(self.__pcap, &bpf.__bpf)
+        if res == -1:
+            raise PcapError(pcap_geterr(self.__pcap))
+        IF not PCAP_V0:
+            if res == PCAP_ERROR_NOT_ACTIVATED:
+                raise PcapErrorNotActivated()
 
     def __dealloc__(self):
         if self.__pcap:
@@ -327,7 +340,6 @@ cdef class PcapPacket:
             return self.__data
 
 
-#cdef PcapPacket PcapPacket_factory(pcap_pkthdr *pkt_header, const_uchar_ptr data):
 cdef PcapPacket PcapPacket_factory(const_pcap_pkthdr_ptr pkt_header, const_uchar_ptr data):
     cdef PcapPacket instance = PcapPacket.__new__(PcapPacket)
     cdef char *cast_data = <char *>data
@@ -359,7 +371,18 @@ cdef class PcapAddress:
     pass
 
 cdef class BpfProgram:
-    pass
+    cdef bpf_program __bpf
+    def __init__(self, Pcap pcap, filterstring):
+        if pcap.__pcap is NULL:
+            raise PcapErrorNotActivated()
+        res = pcap_compile(pcap.__pcap, &self.__bpf, filterstring, 1, PCAP_NETMASK_UNKNOWN)
+        if res == -1:
+            raise PcapError(pcap_geterr(pcap.__pcap))
+        IF not PCAP_V0:
+            # It should return this, but might not
+            if res == PCAP_ERROR_NOT_ACTIVATED:
+                raise PcapErrorNotActivated()
+
 
 def lib_version():
     """Return the version string from pcap_lib_version()"""
