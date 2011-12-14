@@ -41,11 +41,16 @@ class PcapTimeout(Exception):
 cdef void __pcap_callback_fn(unsigned char *user, const_pcap_pkthdr_ptr pkthdr, const_uchar_ptr pktdata):
     cdef pcap_callback_ctx *ctx = <pcap_callback_ctx *>user
     cdef PcapPacket pkt = PcapPacket_factory(pkthdr, pktdata)
+    cdef Pcap pcap = <object>ctx.pcap
     (<object>ctx.callback)(pkt, <object>ctx.args)
+    if pcap.__dumper:
+        pcap.__dumper.dump(pkt)
 
 # Things that work with all pcap_t
 cdef class Pcap(object):
     cdef pcap_t *__pcap
+    cdef PcapDumper __dumper
+    cdef __autosave
     def __init__(self):
         raise TypeError("Instantiate a PcapLive of PcapOffline class")
 
@@ -72,6 +77,8 @@ cdef class Pcap(object):
                 raise PcapErrorNotActivated() # This is undocumented, but happens
         if res == 1:
             pkt = PcapPacket_factory(hdr, data)
+            if self.__dumper:
+                self.__dumper.dump(pkt)
             return pkt
         else:
             raise PcapError("Unknown error")
@@ -85,6 +92,7 @@ cdef class Pcap(object):
         ctx.callback = <void *>callback
         ctx.args = <void *>args
         ctx.kwargs = <void *>kwargs
+        ctx.pcap = <void *>self
         res = pcap_dispatch(self.__pcap, cnt, __pcap_callback_fn, <unsigned char *>&ctx)
         if res >= 0:
             return res
@@ -126,7 +134,7 @@ cdef class PcapLive(Pcap):
     cdef __buffer_size
     cdef __interface
     def __init__(self, interface, snaplen=65535, promisc=False, rfmon=False,
-            timeout=0, buffer_size=0):
+            timeout=0, buffer_size=0, autosave=None):
         cdef char errbuf[PCAP_ERRBUF_SIZE]
         self.__interface = interface # For now, eventually we'll look it up and do PcapInterface
         if not PCAP_V0:
@@ -138,6 +146,8 @@ cdef class PcapLive(Pcap):
         self.snaplen = snaplen
         self.promisc = promisc
         self.timeout = timeout
+        self.__autosave = autosave
+
         IF not PCAP_V0:
             self.rfmon = rfmon
             self.buffer_size = buffer_size
@@ -276,7 +286,7 @@ cdef class PcapLive(Pcap):
             res = pcap_activate(self.__pcap)
             if res == 0:
                 # Success
-                return
+                pass
             elif res == PCAP_WARNING_PROMISC_NOTSUP:
                 raise PcapWarningPromiscNotSup(pcap_geterr(self.__pcap))
             elif res == PCAP_WARNING:
@@ -294,16 +304,22 @@ cdef class PcapLive(Pcap):
             elif res == PCAP_ERROR:
                 raise PcapError(pcap_geterr(self.__pcap))
 
+        if self.__autosave:
+            self.__dumper = PcapDumper(self, self.__autosave)
+
 
 # Things that work with pcap_open_offline
 cdef class PcapOffline(Pcap):
     cdef __filename
-    def __init__(self, filename):
+    def __init__(self, filename, autosave=None):
         cdef char errbuf[PCAP_ERRBUF_SIZE]
         self.__filename = filename
+        self.__autosave = autosave
         self.__pcap = pcap_open_offline(self.__filename, errbuf)
         if self.__pcap == NULL:
             raise PcapError(errbuf)
+        if self.__autosave:
+            self.__dumper = PcapDumper(self, self.__autosave)
 
     property filename:
         def __get__(self):
@@ -435,7 +451,6 @@ cdef class PcapAddress:
         addr = family = nm = None
         if not self.address:
             addr = family = 'Unknown'
-            print addr, family
         if not self.netmask:
             nm = 'Unknown'
 
@@ -462,7 +477,6 @@ cdef parse_addr(sockaddr *addr):
         return {'family': addr.sa_family}
     res = getnameinfo(addr, socklen, buf, sizeof(buf), NULL, 0, NI_NUMERICHOST)
     if res:
-        print "getnameinfo:", gai_strerror(res)
         return {'family': addr.sa_family}
 
     return {'family': addr.sa_family, 'address': buf}

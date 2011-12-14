@@ -115,4 +115,5 @@ cdef extern from "pcap.h":
 cdef struct pcap_callback_ctx:
     void *callback
     void *args
+    void *pcap
     void *kwargs
