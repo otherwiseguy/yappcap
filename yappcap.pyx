@@ -1,5 +1,6 @@
 include "definitions.pxi"
 from pcap cimport *
+from cpython cimport bool
 
 class PcapError(Exception):
     pass
@@ -364,11 +365,115 @@ cdef class PcapDumper:
 
 # Read only cdef factory-created
 cdef class PcapInterface:
-    pass
+    cdef list __addresses
+    cdef str __name
+    cdef str __description
+    cdef bool __loopback
+    def __init__(self):
+        raise TypeError("Instances of this class cannot be created from Python")
+    property name:
+        def __get__(self):
+            return self.__name
+    property description:
+        def __get__(self):
+            return self.__description
+    property loopback:
+        def __get__(self):
+            return self.__loopback
+    property addresses:
+        def __get__(self):
+            return self.__addresses
+    def __str__(self):
+        return self.name
+
+cdef PcapInterface PcapInterface_factory(pcap_if_t *interface):
+    cdef PcapInterface instance = PcapInterface.__new__(PcapInterface)
+    cdef pcap_addr_t *it = interface.addresses
+    instance.__addresses = list()
+    if interface.name:
+        instance.__name = interface.name
+    if interface.description:
+        instance.__description = interface.description
+    if interface.flags & PCAP_IF_LOOPBACK:
+        instance.__loopback = True
+    else:
+        instance.__loopback = False
+
+    while it:
+        addr = PcapAddress_factory(it)
+        instance.__addresses.append(addr)
+        it = it.next
+    return instance
+
+cdef str type2str(int t):
+    if t == AF_INET:
+        return "IPv4"
+    elif t == AF_INET6:
+        return "IPv6"
+    else:
+        return str(t)
 
 # Read only cdef factory-created
 cdef class PcapAddress:
-    pass
+    cdef dict __addr, __netmask, __broadaddr, __dstaddr
+    def __init__(self):
+        raise TypeError("Instances of this class cannot be created from Python")
+    property address:
+        def __get__(self):
+            return self.__addr
+    property netmask:
+        def __get__(self):
+            return self.__netmask
+    property broadcast:
+        def __get__(self):
+            return self.__broadaddr
+    property dstaddr:
+        def __get__(self):
+            return self.__dstaddr
+
+    def __str__(self):
+        addr = family = nm = None
+        if not self.address:
+            addr = family = 'Unknown'
+            print addr, family
+        if not self.netmask:
+            nm = 'Unknown'
+
+        return "%s: %s/%s" % (family or type2str(self.address['family']), addr or self.address.get('address', 'Unknown'), nm or self.netmask.get('address', 'Unknown'))
+
+
+cdef get_sock_len(sockaddr *addr):
+    if addr.sa_family == AF_INET:
+        return sizeof(sockaddr_in)
+    elif addr.sa_family == AF_INET6:
+        return sizeof(sockaddr_in6)
+    else:
+        return -1
+
+cdef parse_addr(sockaddr *addr):
+    cdef int socklen
+    cdef char buf[NI_MAXHOST]
+
+    if not addr:
+        return
+
+    socklen = get_sock_len(addr)
+    if socklen < 0:
+        return {'family': addr.sa_family}
+    res = getnameinfo(addr, socklen, buf, sizeof(buf), NULL, 0, NI_NUMERICHOST)
+    if res:
+        print "getnameinfo:", gai_strerror(res)
+        return {'family': addr.sa_family}
+
+    return {'family': addr.sa_family, 'address': buf}
+
+cdef PcapAddress PcapAddress_factory(pcap_addr_t *address):
+    cdef PcapAddress instance = PcapAddress.__new__(PcapAddress)
+    instance.__addr = parse_addr(address.addr)
+    instance.__netmask = parse_addr(address.netmask)
+    instance.__broadaddr = parse_addr(address.broadaddr)
+    instance.__dstaddr = parse_addr(address.dstaddr)
+    return instance
 
 cdef class BpfProgram:
     cdef bpf_program __bpf
@@ -390,7 +495,20 @@ def lib_version():
 
 def findalldevs():
     """Return a list of available PcapInterfaces"""
-    pass
+    cdef pcap_if_t *interfaces, *it
+    cdef char errbuf[PCAP_ERRBUF_SIZE]
+    cdef int res = pcap_findalldevs(&interfaces, errbuf)
+    cdef list result = list()
+    if res < 0:
+        raise PcapError(errbuf)
+    it = interfaces
+    while it:
+        i = PcapInterface_factory(it)
+        result.append(i)
+        it = it.next
+    pcap_freealldevs(interfaces)
+
+    return result
 
 def lookupdev():
     """Return a single available PcapInterface"""

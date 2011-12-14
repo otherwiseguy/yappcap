@@ -5,6 +5,26 @@ cdef extern from "sys/time.h":
         long tv_sec
         long tv_usec
 
+cdef extern from "sys/socket.h":
+    cdef struct sockaddr:
+        unsigned int sa_family
+    cdef struct sockaddr_in:
+        pass
+    cdef struct sockaddr_in6:
+        pass
+    cdef enum:
+        AF_INET
+        AF_INET6
+        #AF_LINK
+
+cdef extern from "netdb.h":
+    cdef enum:
+        NI_NUMERICHOST
+        NI_MAXHOST
+
+    int getnameinfo(sockaddr *, unsigned int, char *, unsigned int, char *, unsigned int, int)
+    char *gai_strerror(int)
+
 cdef extern from *:
     ctypedef unsigned char* const_uchar_ptr "const unsigned char *"
 
@@ -35,9 +55,21 @@ cdef extern from "pcap.h":
 
         PCAP_ERRBUF_SIZE
         PCAP_NETMASK_UNKNOWN
-
+        PCAP_IF_LOOPBACK
     cdef struct bpf_program:
         pass
+    ctypedef struct pcap_addr_t:
+        pcap_addr_t *next
+        sockaddr *addr
+        sockaddr *netmask
+        sockaddr *broadaddr
+        sockaddr *dstaddr
+    ctypedef struct pcap_if_t:
+        pcap_if_t *next
+        char *name
+        char *description
+        pcap_addr_t *addresses
+        int flags
 
     # Live-capture-only functions
     IF PCAP_V0:
@@ -77,6 +109,8 @@ cdef extern from "pcap.h":
 
     # Top-level library functions
     char *pcap_lib_version()
+    int pcap_findalldevs(pcap_if_t **, char *)
+    void pcap_freealldevs(pcap_if_t *)
 
 cdef struct pcap_callback_ctx:
     void *callback
