@@ -524,10 +524,10 @@ def findalldevs():
 
     return result
 
-def lookupdev():
-    """Return a single available PcapInterface"""
-    pass
-
-def lookupnet(ifname):
-    """Return the IPv4 address and netmask of an interface"""
-    pass
+#def lookupdev():
+#    """Return a single available PcapInterface"""
+#    pass
+#
+#def lookupnet(ifname):
+#    """Return the IPv4 address and netmask of an interface"""
+#    pass
