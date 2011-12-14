@@ -120,6 +120,14 @@ cdef class Pcap(object):
             if res == PCAP_ERROR_NOT_ACTIVATED:
                 raise PcapErrorNotActivated()
 
+    property datalink:
+        def __get__(self):
+            if self.__pcap is NULL:
+                raise PcapErrorNotActivated()
+            # libpcap currently returns no error if the pcap isn't
+            # isn't yet active.
+            return pcap_datalink_val_to_name(pcap_datalink(self.__pcap))
+
     def __dealloc__(self):
         if self.__pcap:
             pcap_close(self.__pcap)

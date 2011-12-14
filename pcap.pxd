@@ -101,6 +101,8 @@ cdef extern from "pcap.h":
     int pcap_setfilter(pcap_t *, bpf_program *)
     void pcap_close(pcap_t *)
     char *pcap_geterr(pcap_t *)
+    int pcap_datalink(pcap_t *)
+    char *pcap_datalink_val_to_name(int)
 
     # Pcap dump functions
     pcap_dumper_t *pcap_dump_open(pcap_t *, char *)
