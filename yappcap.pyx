@@ -1,5 +1,3 @@
-#icython: embedsignature=True
-
 include "definitions.pxi"
 from pcap cimport *
 from cpython cimport bool
