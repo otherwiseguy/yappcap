@@ -88,8 +88,17 @@ cdef class Pcap(object):
         else:
             raise PcapError("Unknown error")
 
-    def dispatch(self, cnt, callback, *args, **kwargs):
-        """Process packets from a live capture or savefile"""
+    def dispatch(self, count, callback, *args, **kwargs):
+        """Process packets from a live capture or savefile
+
+        Args:
+            count (int): The maximum number of packets to return
+            callback (function): A callback function accepting a PcapPacket, and optional args and kwargs
+
+         Returns:
+             int.  The number of packets returned.
+
+        """
         cdef pcap_callback_ctx ctx
 
         if not self.activated:
@@ -99,7 +108,7 @@ cdef class Pcap(object):
         ctx.args = <void *>args
         ctx.kwargs = <void *>kwargs
         ctx.pcap = <void *>self
-        res = pcap_dispatch(self.__pcap, cnt, __pcap_callback_fn, <unsigned char *>&ctx)
+        res = pcap_dispatch(self.__pcap, count, __pcap_callback_fn, <unsigned char *>&ctx)
         if res >= 0:
             return res
         if res == -1:

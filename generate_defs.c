@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <pcap.h>
 #include <sys/socket.h>
-#if defined(__APPLE__) || defined(__unix)
+#if defined(__APPLE__) || (defined(__unix__) && !defined(__linux__))
 #include <net/if_dl.h>
 #endif
 
