@@ -54,6 +54,7 @@ cdef class Pcap(object):
     cdef PcapDumper __dumper
     cdef BpfProgram __filter
     cdef __autosave
+    cdef bool __activated
     def __init__(self):
         raise TypeError("Instantiate a PcapLive of PcapOffline class")
 
@@ -66,7 +67,7 @@ cdef class Pcap(object):
         cdef pcap_pkthdr *hdr
         cdef const_uchar_ptr data
 
-        if self.__pcap is NULL:
+        if not self.activated:
             raise PcapErrorNotActivated()
 
         res = pcap_next_ex(self.__pcap, &hdr, &data)
@@ -91,7 +92,7 @@ cdef class Pcap(object):
         """Process packets from a live capture or savefile"""
         cdef pcap_callback_ctx ctx
 
-        if self.__pcap is NULL:
+        if not self.activated:
             raise PcapErrorNotActivated()
 
         ctx.callback = <void *>callback
@@ -119,7 +120,7 @@ cdef class Pcap(object):
         def __get__(self):
             return self.__filter
         def __set__(self, bpf):
-            if self.__pcap is NULL:
+            if not self.activated:
                 raise PcapErrorNotActivated()
             if isinstance(bpf, BpfProgram):
                 self.__filter = bpf
@@ -137,11 +138,15 @@ cdef class Pcap(object):
     property datalink:
         """String representation of the datalink, i.e. 'EN10MB'"""
         def __get__(self):
-            if self.__pcap is NULL:
+            if not self.activated:
                 raise PcapErrorNotActivated()
             # libpcap currently returns no error if the pcap isn't
             # isn't yet active.
             return pcap_datalink_val_to_name(pcap_datalink(self.__pcap))
+
+    property activated:
+        def __get__(self):
+            return self.__activated
 
     def __dealloc__(self):
         if self.__pcap:
@@ -161,6 +166,7 @@ cdef class PcapLive(Pcap):
             timeout=0, buffer_size=0, autosave=None):
         cdef char errbuf[PCAP_ERRBUF_SIZE]
         self.__interface = interface # For now, eventually we'll look it up and do PcapInterface
+        self.__activated = False
         if not PCAP_V0:
             self.__pcap = pcap_create(self.__interface, errbuf)
             if self.__pcap is NULL:
@@ -267,7 +273,7 @@ cdef class PcapLive(Pcap):
         def __get__(self):
             cdef char errbuf[PCAP_ERRBUF_SIZE]
 
-            if self.__pcap is NULL:
+            if not self.activated:
                 raise PcapErrorNotActivated()
 
             res = pcap_getnonblock(self.__pcap, errbuf)
@@ -283,7 +289,7 @@ cdef class PcapLive(Pcap):
         def __set__(self, blocking):
             cdef char errbuf[PCAP_ERRBUF_SIZE]
 
-            if self.__pcap is NULL:
+            if not self.actiaved:
                 raise PcapErrorNotActivated()
 
             res = pcap_setnonblock(self.__pcap, not blocking, errbuf)
@@ -300,16 +306,17 @@ cdef class PcapLive(Pcap):
         IF PCAP_V0:
             cdef char errbuf[PCAP_ERRBUF_SIZE]
 
-            if self.__pcap is not NULL:
+            if self.activated:
                 raise PcapErrorActivated()
 
             self.__pcap = self.__pcap = pcap_open_live(self.__interface, self.__snaplen, self.__promisc, self.__timeout, errbuf)
             if self.__pcap is NULL:
                 raise PcapError(errbuf)
+            self.__activated = True
         ELSE:
             res = pcap_activate(self.__pcap)
             if res == 0:
-                # Success
+                self.__activated = True
                 pass
             elif res == PCAP_WARNING_PROMISC_NOTSUP:
                 raise PcapWarningPromiscNotSup(pcap_geterr(self.__pcap))
@@ -340,9 +347,11 @@ cdef class PcapOffline(Pcap):
         cdef char errbuf[PCAP_ERRBUF_SIZE]
         self.__filename = filename
         self.__autosave = autosave
+        self.__activated = False
         self.__pcap = pcap_open_offline(self.__filename, errbuf)
         if self.__pcap == NULL:
             raise PcapError(errbuf)
+        self.__activated = True
         if self.__autosave:
             self.__dumper = PcapDumper(self, self.__autosave)
 
@@ -548,7 +557,7 @@ cdef class BpfProgram:
     cdef bpf_program __bpf
     cdef __filterstring
     def __init__(self, Pcap pcap, filterstring):
-        if pcap.__pcap is NULL:
+        if not pcap.activated:
             raise PcapErrorNotActivated()
         self.__filterstring = filterstring
         res = pcap_compile(pcap.__pcap, &self.__bpf, filterstring, 1, PCAP_NETMASK_UNKNOWN)
