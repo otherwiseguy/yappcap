@@ -467,15 +467,23 @@ cdef class PcapAddress:
     def __init__(self):
         raise TypeError("Instances of this class cannot be created from Python")
     property address:
+        """A dict containing the 'family', and if it exists, the 'address'
+        of the PcapInterface address"""
         def __get__(self):
             return self.__addr
     property netmask:
+        """If applicable, a dict containing the 'family', and if it exists,
+        the 'address' of the PcapInterface netmask address"""
         def __get__(self):
             return self.__netmask
     property broadcast:
+        """If applicable, a dict containing the 'family', and if it exists,
+        the 'address' of the PcapInterface broadcast address"""
         def __get__(self):
             return self.__broadaddr
     property dstaddr:
+        """If applicable, a dict containing the 'family', and if it exists,
+        the 'address' of the PcapInterface destination address"""
         def __get__(self):
             return self.__dstaddr
 
