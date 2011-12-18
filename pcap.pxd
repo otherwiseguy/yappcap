@@ -20,7 +20,7 @@ cdef extern from "sys/socket.h":
 
 IF HAVE_AF_PACKET:
     cdef extern from "linux/if_packet.h":
-        cdef struct scokaddr_ll:
+        cdef struct sockaddr_ll:
             pass
 
 IF HAVE_AF_LINK:
