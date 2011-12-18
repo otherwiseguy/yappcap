@@ -52,6 +52,7 @@ cdef class Pcap(object):
     """Generic Pcap object. Instantiate via PcapLive or PcapOffline"""
     cdef pcap_t *__pcap
     cdef PcapDumper __dumper
+    cdef BpfProgram __filter
     cdef __autosave
     def __init__(self):
         raise TypeError("Instantiate a PcapLive of PcapOffline class")
@@ -113,17 +114,25 @@ cdef class Pcap(object):
     # It sucks that this requires an activated pcap since it means
     # that we will capture non-matching packets between activation
     # and calling setfilter()
-    def setfilter(self, filterstring):
+    property filter:
         """Filter packets through a Berkeley Packet Filter"""
-        if self.__pcap is NULL:
-            raise PcapErrorNotActivated()
-        bpf = BpfProgram(self, filterstring)
-        res = pcap_setfilter(self.__pcap, &bpf.__bpf)
-        if res == -1:
-            raise PcapError(pcap_geterr(self.__pcap))
-        IF not PCAP_V0:
-            if res == PCAP_ERROR_NOT_ACTIVATED:
+        def __get__(self):
+            return self.__filter
+        def __set__(self, bpf):
+            if self.__pcap is NULL:
                 raise PcapErrorNotActivated()
+            if isinstance(bpf, BpfProgram):
+                self.__filter = bpf
+            elif isinstance(bpf, basestring):
+                self.__filter = BpfProgram(self, bpf)
+            else:
+                raise TypeError("Must pass a BpfProgram or string type")
+            res = pcap_setfilter(self.__pcap, &self.__filter.__bpf)
+            if res == -1:
+                raise PcapError(pcap_geterr(self.__pcap))
+            IF not PCAP_V0:
+                if res == PCAP_ERROR_NOT_ACTIVATED:
+                    raise PcapErrorNotActivated()
 
     property datalink:
         """String representation of the datalink, i.e. 'EN10MB'"""
@@ -537,9 +546,11 @@ cdef PcapAddress PcapAddress_factory(pcap_addr_t *address):
 cdef class BpfProgram:
     """A compiled Berkeley Packet Filter program"""
     cdef bpf_program __bpf
+    cdef __filterstring
     def __init__(self, Pcap pcap, filterstring):
         if pcap.__pcap is NULL:
             raise PcapErrorNotActivated()
+        self.__filterstring = filterstring
         res = pcap_compile(pcap.__pcap, &self.__bpf, filterstring, 1, PCAP_NETMASK_UNKNOWN)
         if res == -1:
             raise PcapError(pcap_geterr(pcap.__pcap))
@@ -547,6 +558,9 @@ cdef class BpfProgram:
             # It should return this, but might not
             if res == PCAP_ERROR_NOT_ACTIVATED:
                 raise PcapErrorNotActivated()
+
+    def __str__(self):
+        return self.__filterstring
 
 
 def lib_version():
