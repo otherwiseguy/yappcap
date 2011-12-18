@@ -1,3 +1,4 @@
+#cython: embedsignature=True
 include "definitions.pxi"
 from pcap cimport *
 from cpython cimport bool
@@ -93,10 +94,14 @@ cdef class Pcap(object):
 
         Args:
             count (int): The maximum number of packets to return
+
             callback (function): A callback function accepting a PcapPacket, and optional args and kwargs
 
-         Returns:
-             int.  The number of packets returned.
+        Returns:
+            int.  The number of packets returned.
+
+        Raises:
+            PcapErrorNotActivated, PcapError
 
         """
         cdef pcap_callback_ctx ctx
@@ -125,7 +130,15 @@ cdef class Pcap(object):
     # that we will capture non-matching packets between activation
     # and calling setfilter()
     property filter:
-        """Filter packets through a Berkeley Packet Filter"""
+        """Filter packets through a Berkeley Packet Filter (read/write)
+
+        The filter can be set either with a string describing a BPF filter,
+        e.g. "port 80", or with a BpfProgram instance
+
+        Raises:
+            PcapError, PcapErrorNotActivated
+
+        """
         def __get__(self):
             return self.__filter
         def __set__(self, bpf):
@@ -145,7 +158,12 @@ cdef class Pcap(object):
                     raise PcapErrorNotActivated()
 
     property datalink:
-        """String representation of the datalink, i.e. 'EN10MB'"""
+        """String representation of the datalink, i.e. 'EN10MB' (read-only)
+
+        Raises:
+            PcapError, PcapErrorNotActivated
+
+        """
         def __get__(self):
             if not self.activated:
                 raise PcapErrorNotActivated()
@@ -154,6 +172,7 @@ cdef class Pcap(object):
             return pcap_datalink_val_to_name(pcap_datalink(self.__pcap))
 
     property activated:
+        """Whether or not the capture has been activated (read/write)"""
         def __get__(self):
             return self.__activated
 
@@ -164,7 +183,6 @@ cdef class Pcap(object):
 
 # Things that work with pcap_open_live/pcap_create
 cdef class PcapLive(Pcap):
-    """Pcap object for a live capture"""
     cdef __snaplen
     cdef __promisc
     cdef __rfmon
@@ -173,6 +191,33 @@ cdef class PcapLive(Pcap):
     cdef __interface
     def __init__(self, interface, snaplen=65535, promisc=False, rfmon=False,
             timeout=0, buffer_size=0, autosave=None):
+        """Pcap object for a live capture
+
+        Args:
+            interface (str): The interface name
+
+        Kwargs:
+            snaplen (int): How many bytes of each packet to capture
+
+            promisc (bool): Whether or not to capture in promiscuous mode
+
+            timeout (int): The maximum time to wait for a packet. A value of 0 means no
+                           timeout. On some platforms this results in waiting until a
+                           sufficient number of packets are buffered before returning,
+                           therefor it is almost always advisable to set a timeout.
+
+            autosave (str): The filename to pass to a PcapDumper object that will be used
+                            to save any packet that is processed with dispatch() or next().
+
+            rfmon (bool): Whether or not to enable radio frequency monitor mode
+
+            buffer_size (int): Override the default pcap buffer size. This option should
+                               rarely be needed.
+
+        Raises:
+            PcapError, PcapErrorActivated
+
+        """
         cdef char errbuf[PCAP_ERRBUF_SIZE]
         self.__interface = interface # For now, eventually we'll look it up and do PcapInterface
         self.__activated = False
@@ -192,10 +237,17 @@ cdef class PcapLive(Pcap):
             self.buffer_size = buffer_size
 
     property interface:
+        """The name of the capture interface (read-only)"""
         def __get__(self):
             return self.__interface
 
     property snaplen:
+        """The number of bytes of each captured packet to store (read/write)
+
+        Raises:
+            PcapErrorActivated
+
+        """
         def __get__(self):
             return self.__snaplen
         def __set__(self, snaplen):
@@ -208,6 +260,12 @@ cdef class PcapLive(Pcap):
             self.__snaplen = snaplen
 
     property promisc:
+        """Whether or not to capture in promiscuous mode (read/write)
+
+        Raises:
+            PcapErrorActivated
+
+        """
         def __get__(self):
             return self.__promisc
         def __set__(self, promisc):
@@ -220,6 +278,12 @@ cdef class PcapLive(Pcap):
             self.__promisc = promisc
 
     property timeout:
+        """The timeout for receiving packets with next() and dispatch() (read/write)
+
+        Raises:
+            PcapErrorActivated
+
+        """
         def __get__(self):
             return self.__timeout
         def __set__(self, timeout):
@@ -229,9 +293,15 @@ cdef class PcapLive(Pcap):
             ELSE:
                 if pcap_set_timeout(self.__pcap, timeout) == PCAP_ERROR_ACTIVATED:
                     raise PcapErrorActivated()
-            self.__timeout = timeout 
+            self.__timeout = timeout
 
     property rfmon:
+        """Whether or not to turn on radio frequency monitor mode (read/write)
+
+        Raises:
+            PcapErrorActivated, PcapErrorNoSuchDevice, PcapError
+
+        """
         def __get__(self):
             IF PCAP_V0:
                 raise PcapError("%s is too old for this call" % (lib_version(),))
@@ -254,9 +324,16 @@ cdef class PcapLive(Pcap):
                 elif res == 1:
                     if pcap_set_rfmon(self.__pcap, rfmon) == PCAP_ERROR_ACTIVATED:
                         raise PCAP_ERROR_ACTIVATED
-                    self.__rfmon = rfmon 
+                    self.__rfmon = rfmon
 
     property buffer_size:
+        """If overidden from the default, the number of bytes to allocate for the
+        pcap buffer (read/write)
+
+        Raises:
+            PcapError, PcapErrorActivated
+
+        """
         def __get__(self):
             IF PCAP_V0:
                 raise PcapError("%s is too old for this call" % (lib_version(),))
@@ -270,6 +347,12 @@ cdef class PcapLive(Pcap):
                     raise PcapErrorActivated()
 
     property fileno:
+        """The underlying file descriptor for the capture (read-only)
+
+        Raises:
+            PcapError, PcapErrorNotActivated
+
+        """
         def __get__(self):
             res = pcap_fileno(self.__pcap)
             if res == -1:
@@ -279,6 +362,12 @@ cdef class PcapLive(Pcap):
 
     # Reverse the logic from checking the negative: nonblock
     property blocking:
+        """Whether or not calls to next() or dispatch() should block (read/write)
+
+        Raises:
+            PcapError, PcapErrorNotActivated
+
+        """
         def __get__(self):
             cdef char errbuf[PCAP_ERRBUF_SIZE]
 
@@ -289,7 +378,7 @@ cdef class PcapLive(Pcap):
             if res == -1:
                 raise PcapError(errbuf)
             elif res == 0:
-                return True 
+                return True
             elif res == 1:
                 return False
             else:
@@ -311,6 +400,12 @@ cdef class PcapLive(Pcap):
                 raise PcapError("Unknown error %d" % (res,))
 
     def activate(self):
+        """Activate the capture and start collecting packets
+
+        Raises:
+            PcapError, PcapErrorActivated
+
+        """
         cdef res
         IF PCAP_V0:
             cdef char errbuf[PCAP_ERRBUF_SIZE]
