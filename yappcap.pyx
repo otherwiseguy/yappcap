@@ -1,6 +1,9 @@
+#icython: embedsignature=True
+
 include "definitions.pxi"
 from pcap cimport *
 from cpython cimport bool
+import os
 
 class PcapError(Exception):
     pass
@@ -48,6 +51,7 @@ cdef void __pcap_callback_fn(unsigned char *user, const_pcap_pkthdr_ptr pkthdr, 
 
 # Things that work with all pcap_t
 cdef class Pcap(object):
+    """Generic Pcap object. Instantiate via PcapLive or PcapOffline"""
     cdef pcap_t *__pcap
     cdef PcapDumper __dumper
     cdef __autosave
@@ -58,6 +62,7 @@ cdef class Pcap(object):
         return self
 
     def __next__(self):
+        """Get the next available PcapPacket"""
         cdef PcapPacket pkt
         cdef pcap_pkthdr *hdr
         cdef const_uchar_ptr data
@@ -84,6 +89,7 @@ cdef class Pcap(object):
             raise PcapError("Unknown error")
 
     def dispatch(self, cnt, callback, *args, **kwargs):
+        """Process packets from a live capture or savefile"""
         cdef pcap_callback_ctx ctx
 
         if self.__pcap is NULL:
@@ -110,6 +116,7 @@ cdef class Pcap(object):
     # that we will capture non-matching packets between activation
     # and calling setfilter()
     def setfilter(self, filterstring):
+        """Filter packets through a Berkeley Packet Filter"""
         if self.__pcap is NULL:
             raise PcapErrorNotActivated()
         bpf = BpfProgram(self, filterstring)
@@ -121,6 +128,7 @@ cdef class Pcap(object):
                 raise PcapErrorNotActivated()
 
     property datalink:
+        """String representation of the datalink, i.e. 'EN10MB'"""
         def __get__(self):
             if self.__pcap is NULL:
                 raise PcapErrorNotActivated()
@@ -135,6 +143,7 @@ cdef class Pcap(object):
 
 # Things that work with pcap_open_live/pcap_create
 cdef class PcapLive(Pcap):
+    """Pcap object for a live capture"""
     cdef __snaplen
     cdef __promisc
     cdef __rfmon
@@ -318,6 +327,7 @@ cdef class PcapLive(Pcap):
 
 # Things that work with pcap_open_offline
 cdef class PcapOffline(Pcap):
+    """Pcap object for reading from a capture file."""
     cdef __filename
     def __init__(self, filename, autosave=None):
         cdef char errbuf[PCAP_ERRBUF_SIZE]
@@ -346,6 +356,7 @@ cdef class PcapOffline(Pcap):
             return pcap_minor_version(self.__pcap)
 
 cdef class PcapPacket:
+    """A captured packet"""
     cdef pcap_pkthdr __pkthdr
     cdef bytes __data
     def __init__(self):
@@ -374,6 +385,7 @@ cdef PcapPacket PcapPacket_factory(const_pcap_pkthdr_ptr pkt_header, const_uchar
 
 
 cdef class PcapDumper:
+    """Saves PcapPackets to a file"""
     cdef pcap_dumper_t *__dumper
 
     def __init__(self, Pcap pcap, filename):
@@ -389,22 +401,30 @@ cdef class PcapDumper:
 
 # Read only cdef factory-created
 cdef class PcapInterface:
+    """An interface available to libpcap"""
     cdef list __addresses
     cdef str __name
     cdef str __description
     cdef bool __loopback
     def __init__(self):
+        """This class is only returned by yappcap.findalldevs() and cannot be
+        instantiated from Python"""
         raise TypeError("Instances of this class cannot be created from Python")
+
     property name:
+        """The interface name, i.e. 'eth0'. (read only)"""
         def __get__(self):
             return self.__name
     property description:
+        """A textual description of the interface, if available. (read only)"""
         def __get__(self):
             return self.__description
     property loopback:
+        """Whether or not the interface is a loopback interface. (read only)"""
         def __get__(self):
             return self.__loopback
     property addresses:
+        """A PcapAddress list for all interfaces assigned to the PcapInterface (read only)"""
         def __get__(self):
             return self.__addresses
     def __str__(self):
@@ -432,13 +452,19 @@ cdef PcapInterface PcapInterface_factory(pcap_if_t *interface):
 cdef str type2str(int t):
     if t == AF_INET:
         return "IPv4"
-    elif t == AF_INET6:
+    if t == AF_INET6:
         return "IPv6"
-    else:
-        return str(t)
+    IF HAVE_AF_PACKET:
+        if t == AF_PACKET:
+            return "Packet"
+    IF HAVE_AF_LINK:
+        if t == AF_LINK:
+            return "Link"
+    return str(t)
 
 # Read only cdef factory-created
 cdef class PcapAddress:
+    """An address assigned to a PcapInterface"""
     cdef dict __addr, __netmask, __broadaddr, __dstaddr
     def __init__(self):
         raise TypeError("Instances of this class cannot be created from Python")
@@ -468,10 +494,15 @@ cdef class PcapAddress:
 cdef get_sock_len(sockaddr *addr):
     if addr.sa_family == AF_INET:
         return sizeof(sockaddr_in)
-    elif addr.sa_family == AF_INET6:
+    if addr.sa_family == AF_INET6:
         return sizeof(sockaddr_in6)
-    else:
-        return -1
+    IF HAVE_AF_PACKET:
+        if addr.sa_family == AF_PACKET:
+            return sizeof(sockaddr_ll)
+    IF HAVE_AF_LINK:
+        if addr.sa_family == AF_LINK:
+            return sizeof(sockaddr_dl)
+    return -1
 
 cdef parse_addr(sockaddr *addr):
     cdef int socklen
@@ -498,6 +529,7 @@ cdef PcapAddress PcapAddress_factory(pcap_addr_t *address):
     return instance
 
 cdef class BpfProgram:
+    """A compiled Berkeley Packet Filter program"""
     cdef bpf_program __bpf
     def __init__(self, Pcap pcap, filterstring):
         if pcap.__pcap is NULL:

@@ -15,7 +15,18 @@ cdef extern from "sys/socket.h":
     cdef enum:
         AF_INET
         AF_INET6
-        #AF_LINK
+        AF_LINK
+        AF_PACKET
+
+IF HAVE_AF_PACKET:
+    cdef extern from "linux/if_packet.h":
+        cdef struct scokaddr_ll:
+            pass
+
+IF HAVE_AF_LINK:
+    cdef extern from "net/if_dl.h":
+        cdef struct sockaddr_dl:
+            pass
 
 cdef extern from "netdb.h":
     cdef enum:
