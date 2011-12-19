@@ -1,0 +1,234 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Dealing with network interfaces &mdash; yappcap 0.9.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.9.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="yappcap 0.9.0 documentation" href="index.html" />
+    <link rel="next" title="Live captures" href="live.html" />
+    <link rel="prev" title="Welcome to yappcap’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="live.html" title="Live captures"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to yappcap’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">yappcap 0.9.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-yappcap">
+<span id="dealing-with-network-interfaces"></span><span id="interfaces"></span><h1>Dealing with network interfaces<a class="headerlink" href="#module-yappcap" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>Interfaces<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="yappcap.PcapInterface">
+<em class="property">class </em><tt class="descclassname">yappcap.</tt><tt class="descname">PcapInterface</tt><a class="headerlink" href="#yappcap.PcapInterface" title="Permalink to this definition">¶</a></dt>
+<dd><p>PcapInterface()
+An interface available to libpcap</p>
+<p>This class is only returned by yappcap.findalldevs() and cannot be
+instantiated from Python</p>
+<dl class="attribute">
+<dt id="yappcap.PcapInterface.addresses">
+<tt class="descname">addresses</tt><a class="headerlink" href="#yappcap.PcapInterface.addresses" title="Permalink to this definition">¶</a></dt>
+<dd><p>A PcapAddress list for all interfaces assigned to the PcapInterface (read only)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapInterface.description">
+<tt class="descname">description</tt><a class="headerlink" href="#yappcap.PcapInterface.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>A textual description of the interface, if available. (read only)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapInterface.loopback">
+<tt class="descname">loopback</tt><a class="headerlink" href="#yappcap.PcapInterface.loopback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not the interface is a loopback interface. (read only)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapInterface.name">
+<tt class="descname">name</tt><a class="headerlink" href="#yappcap.PcapInterface.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The interface name, i.e. &#8216;eth0&#8217;. (read only)</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="listing-available-interfaces">
+<h3>Listing available interfaces<a class="headerlink" href="#listing-available-interfaces" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="yappcap.findalldevs">
+<tt class="descclassname">yappcap.</tt><tt class="descname">findalldevs</tt><big>(</big><big>)</big><a class="headerlink" href="#yappcap.findalldevs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of available PcapInterfaces</p>
+</dd></dl>
+
+<p>To create a list of available interface names:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">yappcap</span> <span class="kn">import</span> <span class="n">findalldevs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">interfaces</span> <span class="o">=</span> <span class="n">findalldevs</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">interfaces</span><span class="p">]</span>
+<span class="go">[&#39;en0&#39;, &#39;fw0&#39;, &#39;en1&#39;, &#39;p2p0&#39;, &#39;lo0&#39;]</span>
+</pre></div>
+</div>
+<p>To retrieve the first available loopback device:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">lo</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">interfaces</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">loopback</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="s">&quot;No looback interfaces on this system!&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="interface-addresses">
+<h2>Interface addresses<a class="headerlink" href="#interface-addresses" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="yappcap.PcapAddress">
+<em class="property">class </em><tt class="descclassname">yappcap.</tt><tt class="descname">PcapAddress</tt><a class="headerlink" href="#yappcap.PcapAddress" title="Permalink to this definition">¶</a></dt>
+<dd><p>PcapAddress()
+An address assigned to a PcapInterface</p>
+<dl class="attribute">
+<dt id="yappcap.PcapAddress.address">
+<tt class="descname">address</tt><a class="headerlink" href="#yappcap.PcapAddress.address" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict containing the &#8216;family&#8217;, and if it exists, the &#8216;address&#8217;
+of the PcapInterface address</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapAddress.broadcast">
+<tt class="descname">broadcast</tt><a class="headerlink" href="#yappcap.PcapAddress.broadcast" title="Permalink to this definition">¶</a></dt>
+<dd><p>If applicable, a dict containing the &#8216;family&#8217;, and if it exists,
+the &#8216;address&#8217; of the PcapInterface broadcast address</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapAddress.dstaddr">
+<tt class="descname">dstaddr</tt><a class="headerlink" href="#yappcap.PcapAddress.dstaddr" title="Permalink to this definition">¶</a></dt>
+<dd><p>If applicable, a dict containing the &#8216;family&#8217;, and if it exists,
+the &#8216;address&#8217; of the PcapInterface destination address</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapAddress.netmask">
+<tt class="descname">netmask</tt><a class="headerlink" href="#yappcap.PcapAddress.netmask" title="Permalink to this definition">¶</a></dt>
+<dd><p>If applicable, a dict containing the &#8216;family&#8217;, and if it exists,
+the &#8216;address&#8217; of the PcapInterface netmask address</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>To retrieve a list of the string representations of the IPv4 addresses from
+the looback address returned above:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">socket</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lo</span><span class="o">.</span><span class="n">addresses</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">address</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;family&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">]</span>
+<span class="gp">... </span><span class="p">[</span><span class="s">&#39;IPv4: 127.0.0.1/255.0.0.0&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Dealing with network interfaces</a><ul>
+<li><a class="reference internal" href="#id1">Interfaces</a><ul>
+<li><a class="reference internal" href="#listing-available-interfaces">Listing available interfaces</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#interface-addresses">Interface addresses</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to yappcap&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="live.html"
+                        title="next chapter">Live captures</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/interfaces.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="live.html" title="Live captures"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to yappcap’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">yappcap 0.9.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Terry Wilson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

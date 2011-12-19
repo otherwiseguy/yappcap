@@ -1,0 +1,372 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Live captures &mdash; yappcap 0.9.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.9.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="yappcap 0.9.0 documentation" href="index.html" />
+    <link rel="next" title="Offline captures" href="offline.html" />
+    <link rel="prev" title="Dealing with network interfaces" href="interfaces.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="offline.html" title="Offline captures"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="interfaces.html" title="Dealing with network interfaces"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">yappcap 0.9.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-yappcap">
+<span id="live-captures"></span><span id="live"></span><h1>Live captures<a class="headerlink" href="#module-yappcap" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="yappcap.PcapLive">
+<em class="property">class </em><tt class="descclassname">yappcap.</tt><tt class="descname">PcapLive</tt><a class="headerlink" href="#yappcap.PcapLive" title="Permalink to this definition">¶</a></dt>
+<dd><p>PcapLive(interface, snaplen=65535, promisc=False, rfmon=False, timeout=0, buffer_size=0, autosave=None)</p>
+<p>Pcap object for a live capture</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>interface (str): The interface name</dd>
+<dt>Kwargs:</dt>
+<dd><p class="first">snaplen (int): How many bytes of each packet to capture</p>
+<p>promisc (bool): Whether or not to capture in promiscuous mode</p>
+<dl class="docutils">
+<dt>timeout (int): The maximum time to wait for a packet. A value of 0 means no</dt>
+<dd>timeout. On some platforms this results in waiting until a
+sufficient number of packets are buffered before returning,
+therefor it is almost always advisable to set a timeout.</dd>
+<dt>autosave (str): The filename to pass to a PcapDumper object that will be used</dt>
+<dd>to save any packet that is processed with dispatch() or next().</dd>
+</dl>
+<p>rfmon (bool): Whether or not to enable radio frequency monitor mode</p>
+<dl class="last docutils">
+<dt>buffer_size (int): Override the default pcap buffer size. This option should</dt>
+<dd>rarely be needed.</dd>
+</dl>
+</dd>
+<dt>Raises:</dt>
+<dd>PcapError, PcapErrorActivated</dd>
+</dl>
+<dl class="method">
+<dt id="yappcap.PcapLive.activate">
+<tt class="descname">activate</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#yappcap.PcapLive.activate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate the capture and start collecting packets</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapError, PcapErrorActivated</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.activated">
+<tt class="descname">activated</tt><a class="headerlink" href="#yappcap.PcapLive.activated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not the capture has been activated (read/write)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.blocking">
+<tt class="descname">blocking</tt><a class="headerlink" href="#yappcap.PcapLive.blocking" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not calls to next() or dispatch() should block (read/write)</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapError, PcapErrorNotActivated</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.buffer_size">
+<tt class="descname">buffer_size</tt><a class="headerlink" href="#yappcap.PcapLive.buffer_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>If overidden from the default, the number of bytes to allocate for the
+pcap buffer (read/write)</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapError, PcapErrorActivated</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.datalink">
+<tt class="descname">datalink</tt><a class="headerlink" href="#yappcap.PcapLive.datalink" title="Permalink to this definition">¶</a></dt>
+<dd><p>String representation of the datalink, i.e. &#8216;EN10MB&#8217; (read-only)</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapError, PcapErrorNotActivated</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="yappcap.PcapLive.dispatch">
+<tt class="descname">dispatch</tt><big>(</big><em>self</em>, <em>count</em>, <em>callback</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#yappcap.PcapLive.dispatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process packets from a live capture or savefile</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">count (int): The maximum number of packets to return</p>
+<p class="last">callback (function): A callback function accepting a PcapPacket, and optional args and kwargs</p>
+</dd>
+<dt>Returns:</dt>
+<dd>int.  The number of packets returned.</dd>
+<dt>Raises:</dt>
+<dd>PcapErrorNotActivated, PcapError</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.fileno">
+<tt class="descname">fileno</tt><a class="headerlink" href="#yappcap.PcapLive.fileno" title="Permalink to this definition">¶</a></dt>
+<dd><p>The underlying file descriptor for the capture (read-only)</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapError, PcapErrorNotActivated</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.filter">
+<tt class="descname">filter</tt><a class="headerlink" href="#yappcap.PcapLive.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter packets through a Berkeley Packet Filter (read/write)</p>
+<p>The filter can be set either with a string describing a BPF filter,
+e.g. &#8220;port 80&#8221;, or with a BpfProgram instance</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapError, PcapErrorNotActivated</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.interface">
+<tt class="descname">interface</tt><a class="headerlink" href="#yappcap.PcapLive.interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the capture interface (read-only)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.next">
+<tt class="descname">next</tt><a class="headerlink" href="#yappcap.PcapLive.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.next() -&gt; the next value, or raise StopIteration</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.promisc">
+<tt class="descname">promisc</tt><a class="headerlink" href="#yappcap.PcapLive.promisc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to capture in promiscuous mode (read/write)</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapErrorActivated</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.rfmon">
+<tt class="descname">rfmon</tt><a class="headerlink" href="#yappcap.PcapLive.rfmon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to turn on radio frequency monitor mode (read/write)</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapErrorActivated, PcapErrorNoSuchDevice, PcapError</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.snaplen">
+<tt class="descname">snaplen</tt><a class="headerlink" href="#yappcap.PcapLive.snaplen" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of bytes of each captured packet to store (read/write)</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapErrorActivated</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="yappcap.PcapLive.timeout">
+<tt class="descname">timeout</tt><a class="headerlink" href="#yappcap.PcapLive.timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>The timeout for receiving packets with next() and dispatch() (read/write)</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>PcapErrorActivated</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="capturing-traffic">
+<h2>Capturing traffic<a class="headerlink" href="#capturing-traffic" title="Permalink to this headline">¶</a></h2>
+<p>Some libpcap capture properties must be set before a capture is activated, while
+others can only be set after activation.</p>
+<dl class="docutils">
+<dt>Properties that require an un-activated PcapLive:</dt>
+<dd><ul class="first last simple">
+<li>snaplen</li>
+<li>promisc</li>
+<li>timeout</li>
+<li>autosave</li>
+<li>rfmon</li>
+<li>buffer_size</li>
+</ul>
+</dd>
+<dt>Properties that require an activated PcapLive:</dt>
+<dd><ul class="first last simple">
+<li>blocking</li>
+<li>datalink</li>
+<li>fileno</li>
+<li>filter</li>
+</ul>
+</dd>
+</dl>
+<div class="section" id="starting-a-live-capture">
+<h3>Starting a live capture<a class="headerlink" href="#starting-a-live-capture" title="Permalink to this headline">¶</a></h3>
+<p>An example of creating, initializing, and starting a capture:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">yappcap</span> <span class="kn">import</span> <span class="n">PcapLive</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">PcapLive</span><span class="p">(</span><span class="s">&#39;eth0&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">autosave</span> <span class="o">=</span> <span class="s">&quot;/tmp/output.pcap&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setting-up-a-filter">
+<h3>Setting up a filter<a class="headerlink" href="#setting-up-a-filter" title="Permalink to this headline">¶</a></h3>
+<p>To filter the packets that are returned, set the filter on an activated
+PcapLive object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="s">&quot;udp port 5060&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="retrieving-captured-packets">
+<h3>Retrieving captured packets<a class="headerlink" href="#retrieving-captured-packets" title="Permalink to this headline">¶</a></h3>
+<p>There are several ways to retrieve captured packets. Using iterators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">pkt</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">pkt</span>
+</pre></div>
+</div>
+<p>or manually retrieving the next captured packet:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pkt</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Note that if timeout = 0, the above methods may block for a very long time
+even if packets are being received, as some systems will wait for the
+receive buffer to fill before returning any packets. It is almost always
+advisable to set a timeout or to use non-blocking I/O when using these
+methods.</p>
+</div>
+<p>or using the dispatch() method to execute a callback for each packet:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">pkt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">print</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">pkt</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="s">&#39;beautiful&#39;</span><span class="p">,</span> <span class="s">&#39;plumage&#39;</span><span class="p">,</span> <span class="n">pining</span><span class="o">=</span><span class="s">&#39;fjords&#39;</span><span class="p">)</span>
+<span class="go">(&#39;beautiful&#39;, &#39;plumage&#39;) {&#39;pining&#39;: &#39;fjords&#39;} &lt;Packet recived at 1324264650.400614 with length 1514/1514&gt;</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>dispatch() returns the number of packets processed.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Live captures</a><ul>
+<li><a class="reference internal" href="#capturing-traffic">Capturing traffic</a><ul>
+<li><a class="reference internal" href="#starting-a-live-capture">Starting a live capture</a></li>
+<li><a class="reference internal" href="#setting-up-a-filter">Setting up a filter</a></li>
+<li><a class="reference internal" href="#retrieving-captured-packets">Retrieving captured packets</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="interfaces.html"
+                        title="previous chapter">Dealing with network interfaces</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="offline.html"
+                        title="next chapter">Offline captures</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/live.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="offline.html" title="Offline captures"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="interfaces.html" title="Dealing with network interfaces"
+             >previous</a> |</li>
+        <li><a href="index.html">yappcap 0.9.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Terry Wilson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
