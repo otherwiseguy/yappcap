@@ -9,7 +9,9 @@ Installation
 ------------
 
     make && sudo make install
+
 or
+
     sudo python setup.py install
 
 Getting started
@@ -23,3 +25,5 @@ save file::
     >>> p.filter = "port 5060"
     >>> while True:
     ...     pkt = p.next()
+
+Full documentation at http://otherwiseguy.github.com/yappcap/
