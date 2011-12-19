@@ -495,6 +495,9 @@ cdef class PcapPacket:
         def __get__(self):
             return self.__data
 
+    def __str__(self):
+        return "<Packet recived at %f with length %d/%d>" % (self.timestamp, self.wirelen, self.caplen)
+
 
 cdef PcapPacket PcapPacket_factory(const_pcap_pkthdr_ptr pkt_header, const_uchar_ptr data):
     cdef PcapPacket instance = PcapPacket.__new__(PcapPacket)
