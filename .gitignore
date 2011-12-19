@@ -1,0 +1,4 @@
+build/
+definitions.pxi
+generate_defs
+*.so
