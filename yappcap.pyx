@@ -447,9 +447,21 @@ cdef class PcapLive(Pcap):
 
 # Things that work with pcap_open_offline
 cdef class PcapOffline(Pcap):
-    """Pcap object for reading from a capture file."""
     cdef __filename
     def __init__(self, filename, autosave=None):
+        """Pcap object for reading from a capture file.
+
+        Args:
+            filename (str): The filename of the capture file to process
+            
+        Kwargs:
+            autosave (str): The filename to pass to a PcapDumper object that will be used
+                            to save any packet that is processed with dispatch() or next().
+
+        Raises:
+            PcapError
+
+        """
         cdef char errbuf[PCAP_ERRBUF_SIZE]
         self.__filename = filename
         self.__autosave = autosave
@@ -462,18 +474,23 @@ cdef class PcapOffline(Pcap):
             self.__dumper = PcapDumper(self, self.__autosave)
 
     property filename:
+        """The filename of the capture file being processed (read-only)"""
         def __get__(self):
             return self.__filename
     property snaplen:
+        """The number of bytes of each captured packet to store (read-only)"""
         def __get__(self):
             return pcap_snapshot(self.__pcap)
     property swapped:
+        """Whether the savefile uses a different byte order than the current system (read-only)"""
         def __get__(self):
             return pcap_is_swapped(self.__pcap)
     property major_version:
+        """The marjor version of the savefile format (read-only)"""
         def __get__(self):
             return pcap_major_version(self.__pcap)
     property minor_version:
+        """The minor version of the savefile format (read-only)"""
         def __get__(self):
             return pcap_minor_version(self.__pcap)
 
@@ -662,10 +679,20 @@ cdef PcapAddress PcapAddress_factory(pcap_addr_t *address):
     return instance
 
 cdef class BpfProgram:
-    """A compiled Berkeley Packet Filter program"""
     cdef bpf_program __bpf
     cdef __filterstring
     def __init__(self, Pcap pcap, filterstring):
+        """A compiled Berkeley Packet Filter program
+
+        Args:
+            pcap (Pcap): An active Pcap instance
+
+            filterstring (str): A string describing a Berkeley Packet Filter
+
+        Raises:
+            PcapError, PacapErrorNotActivated
+
+        """
         if not pcap.activated:
             raise PcapErrorNotActivated()
         self.__filterstring = filterstring
