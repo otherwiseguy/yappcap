@@ -44,7 +44,9 @@ cdef void __pcap_callback_fn(unsigned char *user, const_pcap_pkthdr_ptr pkthdr, 
     cdef pcap_callback_ctx *ctx = <pcap_callback_ctx *>user
     cdef PcapPacket pkt = PcapPacket_factory(pkthdr, pktdata)
     cdef Pcap pcap = <object>ctx.pcap
-    (<object>ctx.callback)(pkt, <object>ctx.args)
+    cdef args = <object>ctx.args
+    cdef kwargs = <object>ctx.kwargs
+    (<object>ctx.callback)(pkt, *args, **kwargs)
     if pcap.__dumper:
         pcap.__dumper.dump(pkt)
 
