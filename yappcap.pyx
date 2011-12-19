@@ -389,7 +389,7 @@ cdef class PcapLive(Pcap):
         def __set__(self, blocking):
             cdef char errbuf[PCAP_ERRBUF_SIZE]
 
-            if not self.actiaved:
+            if not self.activated:
                 raise PcapErrorNotActivated()
 
             res = pcap_setnonblock(self.__pcap, not blocking, errbuf)
