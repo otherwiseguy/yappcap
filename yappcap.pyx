@@ -4,6 +4,9 @@ from pcap cimport *
 from cpython cimport bool
 import os
 
+cdef PCAP_LOOP_DISPATCH = 0
+cdef PCAP_LOOP_LOOP = 1
+
 class PcapError(Exception):
     pass
 
@@ -46,7 +49,9 @@ cdef void __pcap_callback_fn(unsigned char *user, const_pcap_pkthdr_ptr pkthdr, 
     cdef Pcap pcap = <object>ctx.pcap
     cdef args = <object>ctx.args
     cdef kwargs = <object>ctx.kwargs
-    (<object>ctx.callback)(pkt, *args, **kwargs)
+    cdef callback = <object>ctx.callback
+    if callback:
+        callback(pkt, *args, **kwargs)
     if pcap.__dumper:
         pcap.__dumper.dump(pkt)
 
@@ -91,21 +96,7 @@ cdef class Pcap(object):
         else:
             raise PcapError("Unknown error")
 
-    def dispatch(self, count, callback, *args, **kwargs):
-        """Process packets from a live capture or savefile
-
-        Args:
-            count (int): The maximum number of packets to return
-
-            callback (function): A callback function accepting a PcapPacket, and optional args and kwargs
-
-        Returns:
-            int.  The number of packets returned.
-
-        Raises:
-            PcapErrorNotActivated, PcapError
-
-        """
+    cdef __loop_common(self, looptype, count, callback, args, kwargs):
         cdef pcap_callback_ctx ctx
 
         if not self.activated:
@@ -115,18 +106,60 @@ cdef class Pcap(object):
         ctx.args = <void *>args
         ctx.kwargs = <void *>kwargs
         ctx.pcap = <void *>self
-        res = pcap_dispatch(self.__pcap, count, __pcap_callback_fn, <unsigned char *>&ctx)
+        if looptype == PCAP_LOOP_DISPATCH:
+            res = pcap_dispatch(self.__pcap, count, __pcap_callback_fn, <unsigned char *>&ctx)
+        else:
+            res = pcap_loop(self.__pcap, count, __pcap_callback_fn, <unsigned char *>&ctx)
         if res >= 0:
-            return res
+            if looptype == PCAP_LOOP_DISPATCH:
+                return res
+            else:
+                return None
         if res == -1:
             raise PcapError(pcap_geterr(self.__pcap))
         if res == -2:
-            # XXX breakloop called, do something
-            return
+            raise PcapErrorBreak()
         IF not PCAP_V0:
             if res == PCAP_ERROR_NOT_ACTIVATED:
                 raise PcapErrorNotActivated()
         raise PcapError("Unknown error")
+
+    def dispatch(self, count, callback, *args, **kwargs):
+        """Process packets from a live capture or savefile
+
+        Args:
+            count (int): The maximum number of packets to return
+
+            callback (function): A callback function accepting a PcapPacket, and optional args and kwargs
+
+        Returns:
+            int.  The number of packets returned
+
+        Raises:
+            PcapErrorNotActivated, PcapError, PcapErrorBreak
+
+        """
+        return self.__loop_common(PCAP_LOOP_DISPATCH, count, callback, args, kwargs)
+
+    def loop(self, count, callback, *args, **kwargs):
+        """Process packets from a live capture or savefile
+
+        Args:
+            count (int): The maximum number of packets to return
+
+            callback (function): A callback function accepting a PcapPacket, and optional args and kwargs
+
+        Raises:
+            PcapErrorNotActivated, PcapError, PcapErrorBreak
+        """
+        return self.__loop_common(PCAP_LOOP_LOOP, count, callback, args, kwargs)
+
+    def breakloop(self):
+        """Set a flag that will force dispatch or loop to raise PcapErrorBreak rather than looping"""
+
+        if not self.activated:
+            return PcapErrorNotActivated()
+        pcap_breakloop(self.__pcap)
 
     # It sucks that this requires an activated pcap since it means
     # that we will capture non-matching packets between activation

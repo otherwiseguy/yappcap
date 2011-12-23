@@ -108,6 +108,8 @@ cdef extern from "pcap.h":
     int pcap_snapshot(pcap_t *)
     int pcap_next_ex(pcap_t *, pcap_pkthdr **, const_uchar_ptr *)
     int pcap_dispatch(pcap_t *, int, pcap_handler, const_uchar_ptr)
+    int pcap_loop(pcap_t *, int, pcap_handler, const_uchar_ptr)
+    void pcap_breakloop(pcap_t *)
     int pcap_compile(pcap_t *, bpf_program *, char *, int, unsigned int)
     int pcap_setfilter(pcap_t *, bpf_program *)
     void pcap_close(pcap_t *)
