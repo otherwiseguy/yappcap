@@ -49,7 +49,7 @@ cdef extern from "pcap.h":
     ctypedef pcap_pkthdr * const_pcap_pkthdr_ptr "const struct pcap_pkthdr *"
     ctypedef struct pcap_dumper_t:
         pass
-    ctypedef void (*pcap_handler)(unsigned char *, const_pcap_pkthdr_ptr, const_uchar_ptr)
+    ctypedef void (*pcap_handler)(unsigned char *, const_pcap_pkthdr_ptr, const_uchar_ptr) except *
     ctypedef enum:
         PCAP_ERROR
         PCAP_ERROR_BREAK

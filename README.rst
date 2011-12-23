@@ -23,7 +23,6 @@ save file::
     >>> p = PcapLive("eth0", timeout=1000)
     >>> p.activate()
     >>> p.filter = "port 5060"
-    >>> while True:
-    ...     pkt = p.next()
+    >>> p.loop(-1, None)
 
 Full documentation at http://otherwiseguy.github.com/yappcap/
