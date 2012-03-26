@@ -59,6 +59,10 @@ cdef void __pcap_callback_fn(unsigned char *user, const_pcap_pkthdr_ptr pkthdr, 
     if pcap.__dumper:
         pcap.__dumper.dump(pkt)
 
+cdef class PcapDumper
+
+cdef class BpfProgram
+
 # Things that work with all pcap_t
 cdef class Pcap(object):
     """Generic Pcap object. Instantiate via PcapLive or PcapOffline"""
