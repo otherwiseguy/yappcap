@@ -625,9 +625,9 @@ cdef PcapInterface PcapInterface_factory(pcap_if_t *interface):
     cdef pcap_addr_t *it = interface.addresses
     instance.__addresses = list()
     if interface.name:
-        instance.__name = interface.name
+        instance.__name = interface.name.decode('UTF-8')
     if interface.description:
-        instance.__description = interface.description
+        instance.__description = interface.description.decode('UTF-8')
     if interface.flags & PCAP_IF_LOOPBACK:
         instance.__loopback = True
     else:
