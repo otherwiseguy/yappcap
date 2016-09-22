@@ -501,7 +501,7 @@ cdef class PcapOffline(Pcap):
 
         Args:
             filename (str): The filename of the capture file to process
-            
+
         Kwargs:
             autosave (str): The filename to pass to a PcapDumper object that will be used
                             to save any packet that is processed with dispatch() or next().
