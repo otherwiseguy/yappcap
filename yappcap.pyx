@@ -161,6 +161,8 @@ cdef class Pcap(object):
 
         Raises:
             PcapErrorNotActivated, PcapError, PcapErrorBreak
+
+        NOTE: loop does not return when a read timeout occurs as per the pcap_loop man page
         """
         return self.__loop_common(PCAP_LOOP_LOOP, count, callback, args, kwargs)
 
