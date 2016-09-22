@@ -119,12 +119,6 @@ cdef class Pcap(object):
         else:
             res = pcap_loop(self.__pcap, count, __pcap_callback_fn, <unsigned char *>&ctx)
 
-        # An exception occurred while looping. pcap_loop won't return on an exception, so to get
-        # the exception that really happened instead of a PcapErrorBreak, we need to look it up
-        err = <object>PyErr_Occurred()
-        if err:
-            raise sys.exc_info()
-
         if res >= 0:
             if looptype == PCAP_LOOP_DISPATCH:
                 return res
