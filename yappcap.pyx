@@ -1,4 +1,5 @@
 #cython: embedsignature=True
+#distutils: libraries = pcap
 include "definitions.pxi"
 from pcap cimport *
 from cpython cimport bool, PyErr_Occurred
