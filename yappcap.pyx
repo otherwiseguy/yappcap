@@ -44,6 +44,9 @@ class PcapWarningPromiscNotSup(Exception):
 class PcapTimeout(Exception):
     pass
 
+class PcapDumperClosed(Exception):
+    pass
+
 cdef void __pcap_callback_fn(unsigned char *user, const_pcap_pkthdr_ptr pkthdr, const_uchar_ptr pktdata) except *:
     cdef pcap_callback_ctx *ctx = <pcap_callback_ctx *>user
     cdef PcapPacket pkt = PcapPacket_factory(pkthdr, pktdata)
@@ -223,9 +226,16 @@ cdef class Pcap(object):
         def __get__(self):
             return self.__activated
 
-    def __dealloc__(self):
+    def close(self):
+        if self.__dumper:
+            self.__dumper.close()
+            self.__dumper = None
         if self.__pcap:
             pcap_close(self.__pcap)
+            self.__pcap = NULL
+
+    def __dealloc__(self):
+        self.close()
 
 
 # Things that work with pcap_open_live/pcap_create
@@ -582,10 +592,18 @@ cdef class PcapDumper:
             raise PcapError(pcap_geterr(pcap.__pcap))
 
     def dump(self, PcapPacket pkt):
+        if not self.__dumper:
+            raise PcapDumperClosed()
         pcap_dump(<unsigned char *>self.__dumper, <pcap_pkthdr *>&pkt.__pkthdr, <unsigned char *>pkt.data)
 
+    def close(self):
+        if self.__dumper:
+            pcap_dump_close(self.__dumper)
+            self.__dumper = NULL
+
     def __dealloc__(self):
-        pcap_dump_close(self.__dumper)
+        self.close()
+
 
 # Read only cdef factory-created
 cdef class PcapInterface:
