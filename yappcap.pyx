@@ -266,7 +266,8 @@ cdef class PcapLive(Pcap):
 
         """
         cdef char errbuf[PCAP_ERRBUF_SIZE]
-        self.__interface = interface # For now, eventually we'll look it up and do PcapInterface
+        # For now, eventually we'll look it up and do PcapInterface
+        self.__interface = interface.encode('UTF-8')
         self.__activated = False
         if not PCAP_V0:
             self.__pcap = pcap_create(self.__interface, errbuf)
@@ -286,7 +287,7 @@ cdef class PcapLive(Pcap):
     property interface:
         """The name of the capture interface (read-only)"""
         def __get__(self):
-            return self.__interface
+            return self.__interface.decode('UTF-8')
 
     property snaplen:
         """The number of bytes of each captured packet to store (read/write)
@@ -511,7 +512,7 @@ cdef class PcapOffline(Pcap):
         self.__filename = filename
         self.__autosave = autosave
         self.__activated = False
-        self.__pcap = pcap_open_offline(self.__filename, errbuf)
+        self.__pcap = pcap_open_offline(self.__filename.encode('UTF-8'), errbuf)
         if self.__pcap == NULL:
             raise PcapError(errbuf)
         self.__activated = True
@@ -576,7 +577,7 @@ cdef class PcapDumper:
     cdef pcap_dumper_t *__dumper
 
     def __init__(self, Pcap pcap, filename):
-        self.__dumper = pcap_dump_open(pcap.__pcap, filename)
+        self.__dumper = pcap_dump_open(pcap.__pcap, filename.encode('UTF-8'))
         if self.__dumper is NULL:
             raise PcapError(pcap_geterr(pcap.__pcap))
 
@@ -741,7 +742,9 @@ cdef class BpfProgram:
         if not pcap.activated:
             raise PcapErrorNotActivated()
         self.__filterstring = filterstring
-        res = pcap_compile(pcap.__pcap, &self.__bpf, filterstring, 1, PCAP_NETMASK_UNKNOWN)
+        res = pcap_compile(pcap.__pcap, &self.__bpf,
+                           filterstring.encode('UTF-8'),
+                           1, PCAP_NETMASK_UNKNOWN)
         if res == -1:
             raise PcapError(pcap_geterr(pcap.__pcap))
         IF not PCAP_V0:
